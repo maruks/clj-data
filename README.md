@@ -1,4 +1,4 @@
-# maruks.data.core
+# maruks.data
 
 Persistent data structures based on "Purely Functional Data Structures" book.
 
@@ -13,12 +13,16 @@ pop           | removes the smallest element    |   O(log n)        |
 conj          | adds element to the heap        |   O(log n)        |
 count         | returns heap's size             |   O(n)            |
 empty         | returns empty heap              |   O(1)            |
-seq           | returns sequqnce of all elements|   O(n log n)      |
+seq           | returns sequence of all elements|   O(n log n)      |
 =             | compares with other sequence    |   O(n log n)      |
 toString      | returns string representation   |   O(n log n)      |
 
 
 ### Examples
+
+```clojure
+=> (require '[maruks.data.leftist-heap :refer [heap min-heap max-heap]])
+```
 
 We can use min-heap or max-heap to create a heap:
 ```clojure
@@ -74,5 +78,4 @@ Heaps are countable:
 
 Copyright © 2015 Maris
 
-Distributed under the Eclipse Public License either version 1.0 
-
+Distributed under the Eclipse Public License version 1.0 

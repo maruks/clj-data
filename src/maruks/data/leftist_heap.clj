@@ -1,6 +1,5 @@
 (ns maruks.data.leftist-heap)
 
-
 (declare insert)
 (declare find-min)
 (declare delete-min)
@@ -15,7 +14,7 @@
   (pop [this]
     (delete-min this))  
   (cons [this e]
-    (insert e this))
+    (insert this e))
   (count [this]
     (if (is-empty? this) 0 (+ 1 (count left) (count right))))
   (empty [this]
@@ -67,7 +66,7 @@
                   (make-node x a1 (heap-merge b1 h2))
                   (make-node y a2 (heap-merge h1 b2))))))
 
-(defn insert [e ^LeftistHeap h]
+(defn insert [^LeftistHeap h e]
   (let [cmpfn (.cmpfn h)]
     (heap-merge (->LeftistHeap 1 e (empty-heap cmpfn) (empty-heap cmpfn) cmpfn) h)))
 
@@ -85,10 +84,10 @@
      (cons (find-min h) (heap-seq (delete-min h))))))
 
 (defn heap [cmpfn & xs]
-  (reduce conj (empty-heap cmpfn) xs))
+  (reduce insert (empty-heap cmpfn) xs))
 
 (defn min-heap [& xs]
-  (reduce conj (empty-heap <=) xs))
+  (apply heap (cons <= xs)))
 
 (defn max-heap [& xs]
-  (reduce conj (empty-heap >=) xs))
+  (apply heap (cons >= xs)))
