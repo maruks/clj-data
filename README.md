@@ -2,6 +2,8 @@
 
 Persistent data structures based on "Purely Functional Data Structures" book.
 
+[![Clojars Project](http://clojars.org/org.clojars.maruks/maruks.data/latest-version.svg)](http://clojars.org/org.clojars.maruks/maruks.data)
+
 ## Leftist heap
 
 Leftist heap implements persistent stack operations:

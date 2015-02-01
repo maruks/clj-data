@@ -1,8 +1,10 @@
-(defproject maruks.data "0.1.0-SNAPSHOT"
+(defproject org.clojars.maruks/maruks.data "0.0.2-SNAPSHOT"
   :description "Persistent data structures"
   :url "https://github.com/maruks/clj-data"
+  :scm {:name "git"
+        :url "https://github.com/maruks/clj-data.git"}
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]]
   :profiles {:dev {:dependencies [[criterium "0.4.3"]]}}
-  :target-path "target/%s/")
+  :signing {:gpg-key "D4FF9261"})
