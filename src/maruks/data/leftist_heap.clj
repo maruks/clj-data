@@ -1,23 +1,17 @@
 (ns maruks.data.leftist-heap)
 
-
-(set! *warn-on-reflection* true)
-
 (declare insert)
 (declare find-min)
 (declare delete-min)
-(declare empty-node)
-(declare is-empty?)
 (declare heap-seq)
 (declare count-nodes)
 
 (deftype TreeNode [rank elem left right] 
   Object
   (hashCode [this]
-    (+ (.hashCode rank)
-       (if (nil? elem) 1 (.hashCode elem))              
-       (if (nil? left) 2 (.hashCode left))
-       (if (nil? right) 3 (.hashCode right))))
+    (+ (.hashCode elem)
+       (if left (.hashCode left) 0)
+       (if right (.hashCode right) 0)))
   (equals [this o]
     (or
      (identical? this o)
@@ -31,16 +25,16 @@
   (pop [this]
     (LeftistHeap. (delete-min root cmpfn) cmpfn))  
   (cons [this e]
-    (LeftistHeap. (insert root e cmpfn) cmpfn))
+    (LeftistHeap. (insert cmpfn root e) cmpfn))
   (count [this]
     (count-nodes root))
   (empty [this]
-    (LeftistHeap. (empty-node) cmpfn))
+    (LeftistHeap. nil cmpfn))
   (equiv [this o]
     (= (seq this) (seq o)))
   clojure.lang.Seqable
   (seq [this]
-    (when-not (is-empty? root)
+    (when root
       (heap-seq root cmpfn)))
   Object
   (toString [this]
@@ -54,25 +48,19 @@
           (= (.hashCode root) (.hashCode o))))))
 
 (defn count-nodes [^TreeNode n]
-  (if (is-empty? n) 0 (+ 1 (count-nodes (.left n) (.right n)))))
-
-(defn is-empty? [^TreeNode h]
-  (nil? (.elem h)))
+  (if n (+ 1 (count-nodes (.left n) (.right n))) 0))
 
 (defn rank [^TreeNode h]
-  (.rank h))
+  (if (nil? h) 0 (.rank h)))
 
 (defn make-node [e ^TreeNode h1 ^TreeNode h2]
   (if (>= (rank h1) (rank h2))
     (->TreeNode (inc (rank h2)) e h1 h2)
     (->TreeNode (inc (rank h1)) e h2 h1)))
 
-(defn empty-node []
-  (->TreeNode 0 nil nil nil))
-
 (defn heap-merge [^TreeNode h1 ^TreeNode h2 cmpfn]
-  (cond (is-empty? h1) h2
-        (is-empty? h2) h1
+  (cond (nil? h1) h2
+        (nil? h2) h1
         :else (let [x (.elem h1)
                     a1 (.left h1)
                     b1 (.right h1)
@@ -83,24 +71,24 @@
                   (make-node x a1 (heap-merge b1 h2 cmpfn))
                   (make-node y a2 (heap-merge h1 b2 cmpfn))))))
 
-(defn insert [^TreeNode h e cmpfn]
-  (heap-merge (->TreeNode 1 e (empty-node) (empty-node)) h cmpfn))
+(defn insert [cmpfn ^TreeNode h e]
+  (heap-merge (->TreeNode 1 e nil nil) h cmpfn))
 
-(defn find-min [^TreeNode h]
-  (when-not (is-empty? h)
-    (.elem h)))
+(defn find-min [^TreeNode n]
+  (when n
+    (.elem n)))
 
-(defn delete-min [^TreeNode h cmpfn]
-  (when-not (is-empty? h)
-    (heap-merge (.left h) (.right h) cmpfn)))
+(defn delete-min [^TreeNode n cmpfn]
+  (when n
+    (heap-merge (.left n) (.right n) cmpfn)))
 
-(defn heap-seq [^TreeNode h cmpfn]
+(defn heap-seq [^TreeNode n cmpfn]
   (lazy-seq
-   (when-not (is-empty? h)
-     (cons (find-min h) (heap-seq (delete-min h cmpfn) cmpfn)))))
+   (when n
+     (cons (find-min n) (heap-seq (delete-min n cmpfn) cmpfn)))))
 
 (defn heap [cmpfn & xs]
-  (->LeftistHeap (reduce #(insert %1 %2 cmpfn) (empty-node) xs) cmpfn))
+  (->LeftistHeap (reduce (partial insert cmpfn) nil xs) cmpfn))
 
 (defn min-heap [& xs]
   (apply heap (cons <= xs)))
