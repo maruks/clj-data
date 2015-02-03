@@ -51,7 +51,7 @@
   (if n (+ 1 (count-nodes (.left n) (.right n))) 0))
 
 (defn rank [^TreeNode h]
-  (if (nil? h) 0 (.rank h)))
+  (if h (.rank h) 0))
 
 (defn make-node [e ^TreeNode h1 ^TreeNode h2]
   (if (>= (rank h1) (rank h2))

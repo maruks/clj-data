@@ -69,6 +69,54 @@
     (is (= (.equals h h2)))
     (is (= (.hashCode h) (.hashCode h2)))))
 
+(defn- every-node? [pred node]
+  (when (pred node)
+    (and (pred (.left node))
+         (pred (.right node)))))
+
+(defn- rnd-op [h]
+  (case (rand-int 3)
+    0 (pop h)
+    (conj h (rand-int 1000000))))
+
+(defn- rnd-heaps [h n]
+  (take n (iterate rnd-op h) ))
+
+(defn- rank-pred [n]
+  (or (nil? n)
+      (>= (rank (.left n))
+          (rank (.right n)))))
+
+(defn elem-pred [cmpfn]
+  (fn [n]
+    (or (nil? n)
+        (and
+         (or (nil? (.left n)) (cmpfn (.elem n) (.. n left elem)))
+         (or (nil? (.right n)) (cmpfn (.elem n) (.. n right elem)))))))
+
+(deftest min-heap-properties
+  (def h (min-heap 7 3 4 9 2 3 4 1 8))
+  
+  (testing "rank(l) >= rank(r)"
+    (is (every-node? rank-pred (.root h)))
+    (is (every? rank-pred (map #(.root %) (rnd-heaps (min-heap) 10000)))))
+
+  (testing "elem(parent) <= elem(child)"    
+    (is (every-node? (elem-pred <=) (.root h)))
+    (is (every? (elem-pred <=) (map #(.root %) (rnd-heaps (min-heap) 10000))))))
+
+(deftest max-heap-properties
+
+  (def h (max-heap 7 3 4 9 2 3 4 1 8))
+  
+  (testing "rank(l) >= rank(r)"
+    (is (every-node? rank-pred (.root h)))
+    (is (every? rank-pred (map #(.root %) (rnd-heaps (max-heap) 10000)))))
+
+  (testing "elem(parent) >= elem(child)"    
+    (is (every-node? (elem-pred >=) (.root h)))
+    (is (every? (elem-pred >=) (map #(.root %) (rnd-heaps (max-heap) 10000))))))
+
 (defn- perf-test-conj []
   (bench (peek (reduce conj (min-heap) (range 10000000 20000000 100)))))
 

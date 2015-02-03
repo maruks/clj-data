@@ -6,5 +6,4 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]]
-  :profiles {:dev {:dependencies [[criterium "0.4.3"]]}}
-  :signing {:gpg-key "D4FF9261"})
+  :profiles {:dev {:dependencies [[criterium "0.4.3"]]}})
