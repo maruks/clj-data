@@ -82,7 +82,10 @@
 (defn- rnd-heaps [h n]
   (take n (iterate rnd-op h) ))
 
-(defn- rank-pred [n]
+(defn- dist-to-rightmost-leaf [n]
+  (if n (inc (dist-to-rightmost-leaf (.right n))) 0))
+
+(defn- rank-pred-siblings [n]
   (or (nil? n)
       (>= (rank (.left n))
           (rank (.right n)))))
@@ -94,28 +97,41 @@
          (or (nil? (.left n)) (cmpfn (.elem n) (.. n left elem)))
          (or (nil? (.right n)) (cmpfn (.elem n) (.. n right elem)))))))
 
+(defn- rank-pred-paren-children [n]
+  (or (nil? n)
+      (= (rank n) (inc (min (rank (.left n)) (rank (.right n)))))))
+
+(defn- rank-pred-dist [n]
+  (or (nil? n)
+      (= (.rank n) (dist-to-rightmost-leaf n))))
+
+(def num-of-heaps 10000)
+
 (deftest min-heap-properties
-  (def h (min-heap 7 3 4 9 2 3 4 1 8))
-  
   (testing "rank(l) >= rank(r)"
-    (is (every-node? rank-pred (.root h)))
-    (is (every? rank-pred (map #(.root %) (rnd-heaps (min-heap) 10000)))))
+    (is (every? rank-pred-siblings (map #(.root %) (rnd-heaps (min-heap) num-of-heaps)))))
+
+  (testing "rank (parent) = 1 + min(rank(left),rank(right))"
+    (is (every? rank-pred-paren-children (map #(.root %) (rnd-heaps (min-heap) num-of-heaps)))))
+
+  (testing "rank (node) is rightmost distance to leaf node"
+    (is (every? rank-pred-dist (map #(.root %) (rnd-heaps (min-heap) num-of-heaps)))))
 
   (testing "elem(parent) <= elem(child)"    
-    (is (every-node? (elem-pred <=) (.root h)))
-    (is (every? (elem-pred <=) (map #(.root %) (rnd-heaps (min-heap) 10000))))))
+    (is (every? (elem-pred <=) (map #(.root %) (rnd-heaps (min-heap) num-of-heaps))))))
 
 (deftest max-heap-properties
-
-  (def h (max-heap 7 3 4 9 2 3 4 1 8))
-  
   (testing "rank(l) >= rank(r)"
-    (is (every-node? rank-pred (.root h)))
-    (is (every? rank-pred (map #(.root %) (rnd-heaps (max-heap) 10000)))))
+    (is (every? rank-pred-siblings (map #(.root %) (rnd-heaps (max-heap) num-of-heaps)))))
 
+  (testing "rank (parent) = 1 + min(rank(left),rank(right))"
+    (is (every? rank-pred-paren-children (map #(.root %) (rnd-heaps (max-heap) num-of-heaps)))))  
+
+  (testing "rank (node) is rightmost distance to leaf node"
+    (is (every? rank-pred-dist (map #(.root %) (rnd-heaps (max-heap) num-of-heaps)))))  
+  
   (testing "elem(parent) >= elem(child)"    
-    (is (every-node? (elem-pred >=) (.root h)))
-    (is (every? (elem-pred >=) (map #(.root %) (rnd-heaps (max-heap) 10000))))))
+    (is (every? (elem-pred >=) (map #(.root %) (rnd-heaps (max-heap) num-of-heaps))))))
 
 (defn- perf-test-conj []
   (bench (peek (reduce conj (min-heap) (range 10000000 20000000 100)))))
