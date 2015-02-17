@@ -13,20 +13,25 @@
           (= (.hashCode this) (.hashCode o))))))
 
 (declare empty-tree)
+(declare count-nodes)
+(declare member?)
+(declare member)
 
 (deftype RedBlackTree [^TreeNode root] 
   clojure.lang.IPersistentSet
-  (disjoin [this key])
-  (contains [this key])
-  (get [this key])
-  (count [this])
+  (disjoin [this k])
+  (contains [this k]
+    (member? root k))
+  (get [this k]
+    (member root k))
+  (count [this]
+    (count-nodes root))
   (empty [this]
     (empty-tree))
   (equiv [this o]
     (= (seq this) (seq o)))
   clojure.lang.IPersistentCollection
-  (cons [this o] this)
-  
+  (cons [this o] this)  
   clojure.lang.Seqable
   (seq [this]
     (when root
@@ -44,13 +49,14 @@
      (and (instance? (class this) o)
           (= (.hashCode root) (.hashCode o))))))
 
+(defn count-nodes [^TreeNode n]
+  (if n (+ 1 (count-nodes (.left n) (.right n))) 0))
 
 (defn empty-tree []
   (->RedBlackTree nil))
 
+(defn member [^TreeNode n k]
 
-(defn red-black-tree-seq [node]
-  (cond (nil? node) '()
-        :else (cons (.elem node)
-                    (concat (red-black-tree-seq (.left node))
-                            (red-black-tree-seq (.right node))))))
+
+
+  )
