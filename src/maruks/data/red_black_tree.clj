@@ -2,7 +2,7 @@
 
 (set! *warn-on-reflection* true)
 
-(deftype TreeNode [color elem left right] 
+(deftype TreeNode [color left elem right] 
   Object
   (hashCode [this]
     (+ (.hashCode elem)
@@ -12,7 +12,9 @@
     (or
      (identical? this o)
      (and (instance? (class this) o)
-          (= (.hashCode this) (.hashCode o))))))
+          (= (.hashCode this) (.hashCode o)))))
+  (toString [t]
+    (str "< C " (.color t) " L " (.left t) " E " (.elem t) " R " (.right t) " >")))
 
 (declare empty-tree)
 (declare count-nodes)
@@ -76,27 +78,35 @@
 
 (defn balance [^TreeNode n]
   (cond
-    (red? n) n
-    
-    (and (red? (.left n)) (red? (.. n left left)))
+    (and (black? (.left n)) (red? (.. n left left)))
     (let [^TreeNode a (.left n)
           ^TreeNode b (.left a)]
-      (->TreeNode :red (->TreeNode :black (.left b) (.elem b) (.right b)) (.elem a) (->TreeNode :black (.right a) (.elem n) (.right n)) ))
+      (->TreeNode :red (->TreeNode :black (.left b) (.elem b) (.right b))
+                  (.elem a)
+                  (->TreeNode :black (.right a) (.elem n) (.right n)) ))
 
-    (and (red? (.left n)) (red? (.. n left right)))
+    (and (black? (.left n)) (red? (.. n left right)))
     (let [^TreeNode a (.left n)
           ^TreeNode b (.right a)]
-      (->TreeNode :red (->TreeNode :black (.left a) (.elem a) (.left b)) (.elem b) (->TreeNode :black  (.right b) (.elem n) (.right n)) ))    
+      (->TreeNode :red (->TreeNode :black (.left a) (.elem a) (.left b))
+                  (.elem b)
+                  (->TreeNode :black  (.right b) (.elem n) (.right n)) ))    
 
-    (and (red? (.right n)) (red? (.. n right left)))
+    (and (black? (.right n)) (red? (.. n right left)))
     (let [^TreeNode a (.right n)
           ^TreeNode b (.left a)]
-      (->TreeNode :red (->TreeNode :black (.left n) (.elem n) (.left b)) (.elem b) (->TreeNode :black (.right b) (.elem n) (.right n)) ))
+      (->TreeNode :red (->TreeNode :black (.left n) (.elem n) (.left b))
+                  (.elem b)
+                  (->TreeNode :black (.right b) (.elem n) (.right n)) ))
 
-    (and (red? (.right n)) (red? (.. n right right)))
+    (and (black? (.right n)) (red? (.. n right right)))
     (let [^TreeNode a (.right n)
           ^TreeNode b (.right a)]
-      (->TreeNode :red (->TreeNode :black (.left n) (.elem n) (.left a)) (.elem a) (->TreeNode :black (.left b) (.elem b) (.right b)) ))))
+      (->TreeNode :red (->TreeNode :black (.left n) (.elem n) (.left a))
+                  (.elem a)
+                  (->TreeNode :black (.left b) (.elem b) (.right b)) ))
+
+    :else n))
 
 (defn insert [e ^TreeNode n]
   (letfn [(ins [^TreeNode s]
@@ -107,9 +117,9 @@
                     r (.right s)
                     c (compare e y)]
                 (cond
-                  (pos? c) (balance col l y (ins r))
-                  (neg? c) (balance col (ins l) y r)
+                 (pos? c) (balance (->TreeNode col l y (ins r)))
+                 (neg? c) (balance (->TreeNode col (ins l) y r))
                   :else s))
               (->TreeNode :red nil e nil)))]
     (let [^TreeNode t (ins n)]
-      (->TreeNode :black (.left t) (.elem t) (.right t)))))
+      (->RedBlackTree (->TreeNode :black (.left t) (.elem t) (.right t))))))
