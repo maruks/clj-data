@@ -36,35 +36,40 @@
       (and (black? left-node) (red? (.left left-node)))
       (let [^TreeNode a (.left n)
             ^TreeNode b (.left a)]
-        (->TreeNode :red (->TreeNode :black (.left b) (.elem b) (.right b))
+        (->TreeNode :red
+                    (->TreeNode :black (.left b) (.elem b) (.right b))
                     (.elem a)
-                    (->TreeNode :black (.right a) (.elem n) (.right n)) ))
+                    (->TreeNode :black (.right a) (.elem n) (.right n))))
 
       (and (black? left-node) (red? (.right left-node)))
       (let [^TreeNode a (.left n)
             ^TreeNode b (.right a)]
-        (->TreeNode :red (->TreeNode :black (.left a) (.elem a) (.left b))
+        (->TreeNode :red
+                    (->TreeNode :black (.left a) (.elem a) (.left b))
                     (.elem b)
-                    (->TreeNode :black  (.right b) (.elem n) (.right n)) ))    
+                    (->TreeNode :black (.right b) (.elem n) (.right n))))    
 
       (and (black? right-node) (red? (.left right-node)))
       (let [^TreeNode a (.right n)
             ^TreeNode b (.left a)]
-        (->TreeNode :red (->TreeNode :black (.left n) (.elem n) (.left b))
+        (->TreeNode :red
+                    (->TreeNode :black (.left n) (.elem n) (.left b))
                     (.elem b)
-                    (->TreeNode :black (.right b) (.elem n) (.right n)) ))
+                    (->TreeNode :black (.right b) (.elem n) (.right n))))
 
       (and (black? right-node) (red? (.right right-node)))
       (let [^TreeNode a (.right n)
             ^TreeNode b (.right a)]
-        (->TreeNode :red (->TreeNode :black (.left n) (.elem n) (.left a))
+        (->TreeNode :red
+                    (->TreeNode :black (.left n) (.elem n) (.left a))
                     (.elem a)
-                    (->TreeNode :black (.left b) (.elem b) (.right b)) ))
+                    (->TreeNode :black (.left b) (.elem b) (.right b))))
       :else n)))
 
-(defn red-black-tree-seq [^TreeNode n]
+(defn bst-sorted-seq [^TreeNode n]
   (if n
-    (cons (.elem n) (mapcat red-black-tree-seq (list (.left n) (.right n))))
+    (concat (bst-sorted-seq (.left n))
+            (cons (.elem n) (bst-sorted-seq (.right n))))
     '()))
 
 (defn count-nodes [^TreeNode n]
@@ -89,11 +94,13 @@
     (= (seq this) (seq o)))
   clojure.lang.IPersistentCollection
   (cons [this e]
-    (insert e root))  
+    (if (contains? this e)
+      this
+      (insert e root)))  
   clojure.lang.Seqable
   (seq [this]
     (when root
-      (red-black-tree-seq root)))
+      (bst-sorted-seq root)))
   clojure.lang.IFn
   (invoke [_ k]
     (member root k))
