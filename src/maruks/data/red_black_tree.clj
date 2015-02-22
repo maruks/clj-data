@@ -1,7 +1,5 @@
 (ns maruks.data.red-black-tree)
 
-(set! *warn-on-reflection* true)
-
 (deftype TreeNode [color left elem right] 
   Object
   (hashCode [this]
@@ -16,9 +14,63 @@
   (toString [t]
     (str "< C " (.color t) " L " (.left t) " E " (.elem t) " R " (.right t) " >")))
 
+(defn member [^TreeNode n k]
+  (when n
+    (let [e (.elem n)
+          c (compare e k)]
+      (cond
+        (pos? c) (member (.left n) k)
+        (neg? c) (member (.right n) k)
+        :else e))))
+
+(defn red? [^TreeNode n]
+  (and n (= :red (.color n))))
+
+(defn black? [^TreeNode n]
+  (and n (= :black (.color n))))
+
+(defn balance [^TreeNode n]
+  (let [^TreeNode left-node (.left n)
+        ^TreeNode right-node (.right n)]
+    (cond
+      (and (black? left-node) (red? (.left left-node)))
+      (let [^TreeNode a (.left n)
+            ^TreeNode b (.left a)]
+        (->TreeNode :red (->TreeNode :black (.left b) (.elem b) (.right b))
+                    (.elem a)
+                    (->TreeNode :black (.right a) (.elem n) (.right n)) ))
+
+      (and (black? left-node) (red? (.right left-node)))
+      (let [^TreeNode a (.left n)
+            ^TreeNode b (.right a)]
+        (->TreeNode :red (->TreeNode :black (.left a) (.elem a) (.left b))
+                    (.elem b)
+                    (->TreeNode :black  (.right b) (.elem n) (.right n)) ))    
+
+      (and (black? right-node) (red? (.left right-node)))
+      (let [^TreeNode a (.right n)
+            ^TreeNode b (.left a)]
+        (->TreeNode :red (->TreeNode :black (.left n) (.elem n) (.left b))
+                    (.elem b)
+                    (->TreeNode :black (.right b) (.elem n) (.right n)) ))
+
+      (and (black? right-node) (red? (.right right-node)))
+      (let [^TreeNode a (.right n)
+            ^TreeNode b (.right a)]
+        (->TreeNode :red (->TreeNode :black (.left n) (.elem n) (.left a))
+                    (.elem a)
+                    (->TreeNode :black (.left b) (.elem b) (.right b)) ))
+      :else n)))
+
+(defn red-black-tree-seq [^TreeNode n]
+  (if n
+    (cons (.elem n) (mapcat red-black-tree-seq (list (.left n) (.right n))))
+    '()))
+
+(defn count-nodes [^TreeNode n]
+  (if n (+ 1 (count-nodes (.left n)) (count-nodes (.right n))) 0))
+
 (declare empty-tree)
-(declare count-nodes)
-(declare member)
 (declare insert)
 
 (deftype RedBlackTree [^TreeNode root] 
@@ -41,9 +93,10 @@
   clojure.lang.Seqable
   (seq [this]
     (when root
-      (tree-seq identity
-                (fn [^TreeNode n] (filter identity (list (.left n) (.right n))))
-                root)))
+      (red-black-tree-seq root)))
+  clojure.lang.IFn
+  (invoke [_ k]
+    (member root k))
   Object
   (toString [this]
     (clojure.string/join " " (seq this)))
@@ -55,58 +108,8 @@
      (and (instance? (class this) o)
           (= (.hashCode root) (.hashCode o))))))
 
-(defn count-nodes [^TreeNode n]
-  (if n (+ 1 (count-nodes (.left n) (.right n))) 0))
-
 (defn empty-tree []
   (->RedBlackTree nil))
-
-(defn member [^TreeNode n k]
-  (when n
-    (let [e (.elem n)
-          c (compare e k)]
-      (cond
-        (pos? c) (member (.right n) k)
-        (neg? c) (member (.left n) k)
-        :else e))))
-
-(defn red? [^TreeNode n]
-  (and n (= :red (.color n))))
-
-(defn black? [^TreeNode n]
-  (and n (= :black (.color n))))
-
-(defn balance [^TreeNode n]
-  (cond
-    (and (black? (.left n)) (red? (.. n left left)))
-    (let [^TreeNode a (.left n)
-          ^TreeNode b (.left a)]
-      (->TreeNode :red (->TreeNode :black (.left b) (.elem b) (.right b))
-                  (.elem a)
-                  (->TreeNode :black (.right a) (.elem n) (.right n)) ))
-
-    (and (black? (.left n)) (red? (.. n left right)))
-    (let [^TreeNode a (.left n)
-          ^TreeNode b (.right a)]
-      (->TreeNode :red (->TreeNode :black (.left a) (.elem a) (.left b))
-                  (.elem b)
-                  (->TreeNode :black  (.right b) (.elem n) (.right n)) ))    
-
-    (and (black? (.right n)) (red? (.. n right left)))
-    (let [^TreeNode a (.right n)
-          ^TreeNode b (.left a)]
-      (->TreeNode :red (->TreeNode :black (.left n) (.elem n) (.left b))
-                  (.elem b)
-                  (->TreeNode :black (.right b) (.elem n) (.right n)) ))
-
-    (and (black? (.right n)) (red? (.. n right right)))
-    (let [^TreeNode a (.right n)
-          ^TreeNode b (.right a)]
-      (->TreeNode :red (->TreeNode :black (.left n) (.elem n) (.left a))
-                  (.elem a)
-                  (->TreeNode :black (.left b) (.elem b) (.right b)) ))
-
-    :else n))
 
 (defn insert [e ^TreeNode n]
   (letfn [(ins [^TreeNode s]
