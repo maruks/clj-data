@@ -14,13 +14,13 @@
   (toString [t]
     (str "< C " (.color t) " L " (.left t) " E " (.elem t) " R " (.right t) " >")))
 
-(defn member [^TreeNode n k]
+(defn member [^TreeNode n k cmpfn]
   (when n
     (let [e (.elem n)
-          c (compare e k)]
+          c (cmpfn e k)]
       (cond
-        (pos? c) (member (.left n) k)
-        (neg? c) (member (.right n) k)
+        (pos? c) (member (.left n) k cmpfn)
+        (neg? c) (member (.right n) k cmpfn)
         :else e))))
 
 (defn red? [^TreeNode n]
@@ -29,42 +29,39 @@
 (defn black? [^TreeNode n]
   (and n (= :black (.color n))))
 
-(defn balance [^TreeNode n]
-  (let [^TreeNode left-node (.left n)
-        ^TreeNode right-node (.right n)]
+(defn balance [color ^TreeNode left elem ^TreeNode right]
+  (let [^TreeNode left-left (and left (.left left))
+        ^TreeNode left-right (and left (.right left))
+        ^TreeNode right-left (and right (.left right))
+        ^TreeNode right-right (and right (.right right))]
     (cond
-      (and (black? left-node) (red? (.left left-node)))
-      (let [^TreeNode a (.left n)
-            ^TreeNode b (.left a)]
-        (->TreeNode :red
-                    (->TreeNode :black (.left b) (.elem b) (.right b))
-                    (.elem a)
-                    (->TreeNode :black (.right a) (.elem n) (.right n))))
+      (and left left-left (= :black color) (red? left) (red? left-left))
+      (->TreeNode :red
+                  (->TreeNode :black (.left left-left) (.elem left-left) (.right left-left))
+                  (.elem left)
+                  (->TreeNode :black (.right left) elem right))
 
-      (and (black? left-node) (red? (.right left-node)))
-      (let [^TreeNode a (.left n)
-            ^TreeNode b (.right a)]
-        (->TreeNode :red
-                    (->TreeNode :black (.left a) (.elem a) (.left b))
-                    (.elem b)
-                    (->TreeNode :black (.right b) (.elem n) (.right n))))    
+      (and left left-right (= :black color) (red? left) (red? left-right))
+      (->TreeNode :red
+                  (->TreeNode :black (.left left) (.elem left) (.left left-right))
+                  (.elem left-right)
+                  (->TreeNode :black (.right left-right) elem right))    
 
-      (and (black? right-node) (red? (.left right-node)))
-      (let [^TreeNode a (.right n)
-            ^TreeNode b (.left a)]
-        (->TreeNode :red
-                    (->TreeNode :black (.left n) (.elem n) (.left b))
-                    (.elem b)
-                    (->TreeNode :black (.right b) (.elem n) (.right n))))
+      (and right right-left (= :black color) (red? right) (red? right-left))
+      (->TreeNode :red
+                  (->TreeNode :black left elem (.left right-left))
+                  (.elem right-left)
+                  (->TreeNode :black (.right right-left) (.elem right) (.right right)))
 
-      (and (black? right-node) (red? (.right right-node)))
-      (let [^TreeNode a (.right n)
-            ^TreeNode b (.right a)]
-        (->TreeNode :red
-                    (->TreeNode :black (.left n) (.elem n) (.left a))
-                    (.elem a)
-                    (->TreeNode :black (.left b) (.elem b) (.right b))))
-      :else n)))
+      (and right right-right (= :black color) (red? right) (red? right-right))
+      (->TreeNode :red
+                  (->TreeNode :black left elem (.left right))
+                  (.elem right)
+                  (->TreeNode :black (.left right-right) (.elem right-right) (.right right-right)))
+      
+      :else (->TreeNode color left elem right)))
+  
+  )
 
 (defn bst-sorted-seq [^TreeNode n]
   (if n
@@ -78,14 +75,14 @@
 (declare empty-tree)
 (declare insert)
 
-(deftype RedBlackTree [^TreeNode root] 
+(deftype RedBlackTree [^TreeNode root cmpfn] 
   clojure.lang.IPersistentSet
   (disjoin [this k]
     (comment ???))
   (contains [this k]
-    (not (nil? (member root k))))
+    (not (nil? (member root k cmpfn))))
   (get [this k]
-    (member root k))
+    (member root k cmpfn))
   (count [this]
     (count-nodes root))
   (empty [this]
@@ -96,14 +93,14 @@
   (cons [this e]
     (if (contains? this e)
       this
-      (insert e root)))  
+      (insert e root cmpfn)))  
   clojure.lang.Seqable
   (seq [this]
     (when root
       (bst-sorted-seq root)))
   clojure.lang.IFn
   (invoke [_ k]
-    (member root k))
+    (member root k cmpfn))
   Object
   (toString [this]
     (clojure.string/join " " (seq this)))
@@ -115,21 +112,30 @@
      (and (instance? (class this) o)
           (= (.hashCode root) (.hashCode o))))))
 
-(defn empty-tree []
-  (->RedBlackTree nil))
-
-(defn insert [e ^TreeNode n]
+(defn insert [e ^TreeNode n cmpfn]
   (letfn [(ins [^TreeNode s]
             (if s
               (let [col (.color s)
                     l (.left s)
                     y (.elem s)
                     r (.right s)
-                    c (compare e y)]
+                    c (cmpfn e y)]
                 (cond
-                 (pos? c) (balance (->TreeNode col l y (ins r)))
-                 (neg? c) (balance (->TreeNode col (ins l) y r))
+                 (pos? c) (balance col l y (ins r))
+                 (neg? c) (balance col (ins l) y r)
                   :else s))
               (->TreeNode :red nil e nil)))]
     (let [^TreeNode t (ins n)]
-      (->RedBlackTree (->TreeNode :black (.left t) (.elem t) (.right t))))))
+      (->RedBlackTree (->TreeNode :black (.left t) (.elem t) (.right t)) cmpfn))))
+
+(defn empty-tree
+  ([]
+   (empty-tree compare))
+  ([cmpfn]
+   (->RedBlackTree nil cmpfn)))
+
+(defn red-black-tree
+  ([xs]
+   (reduce conj (empty-tree) xs))
+  ([cmpfn xs]
+   (reduce conj (empty-tree cmpfn) xs)))
