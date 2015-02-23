@@ -91,9 +91,7 @@
     (= (seq this) (seq o)))
   clojure.lang.IPersistentCollection
   (cons [this e]
-    (if (contains? this e)
-      this
-      (insert e root cmpfn)))  
+    (insert e root cmpfn))  
   clojure.lang.Seqable
   (seq [this]
     (when root
