@@ -56,6 +56,12 @@
       (and (or (nil? (.left n)) (= :black (.. n left color)))
            (or (nil? (.right n)) (= :black (.. n right color))))))
 
+(defn- red-children-pred [n]
+  (or (nil? n)
+      (= :black (.color n))     
+      (or (and (nil? (.left n)) (nil? (.right n)))
+          (and (not (nil? (.left n))) (not (nil? (.right n)))))))
+
 (defn- count-black-nodes [n]
   (if n
     (let [t (mapcat count-black-nodes (list (.left n) (.right n)))]
@@ -69,22 +75,36 @@
         b (first t)]
     (every? #(= b %) t)))
 
-(def set-size 100)
+(defn- red-black-color-pred [n]
+  (or (nil? n)
+      (= :black (.color n))
+      (= :red (.color n))))
+
+(def set-size 200)
 
 (defn- rnd-set [n]
   (reduce conj (empty-tree) (repeatedly n #(rand-int 10000))))
 
 (defn- rnd-sets [n]
-  (repeatedly n #(rnd-set set-size)))
+  (repeatedly n #(rnd-set (+ set-size (rand-int 10)))))
 
 (deftest red-black-tree-properties
 
-  (testing "left < parent < right"
+  (testing "root is black"
+    (is (every? #(= :black (.. % root color)) (rnd-sets 100))))  
+  
+  (testing "left child < parent < right child"
     (is (every? #(every-node? bst-pred (.root %)) (rnd-sets 100))))
   
   (testing "no red node has red child node"
     (is (every? #(every-node? red-child-pred (.root %)) (rnd-sets 100))))
 
+  (testing "node is either black or red"
+      (is (every? #(every-node? red-black-color-pred (.root %)) (rnd-sets 100))))
+    
+  (testing "red node has either zero or two children"
+    (is (every? #(every-node? red-children-pred (.root %)) (rnd-sets 100))))  
+  
   (testing "every path from the root to empty node has the same number of black nodes"
     (is (every? #(every-node? black-nodes-pred (.root %)) (rnd-sets 100)))))
 
