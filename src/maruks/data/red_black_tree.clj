@@ -74,11 +74,12 @@
 
 (declare empty-tree)
 (declare insert)
+(declare remove-node)
 
 (deftype RedBlackTree [^TreeNode root cmpfn] 
   clojure.lang.IPersistentSet
   (disjoin [this k]
-    (comment ???))
+    (->RedBlackTree (remove-node root k cmpfn) cmpfn))
   (contains [this k]
     (not (nil? (member root k cmpfn))))
   (get [this k]
@@ -91,7 +92,8 @@
     (= (seq this) (seq o)))
   clojure.lang.IPersistentCollection
   (cons [this e]
-    (insert e root cmpfn))  
+    (let [t (insert e root cmpfn)]
+      (->RedBlackTree t cmpfn)))  
   clojure.lang.Seqable
   (seq [this]
     (when root
@@ -124,7 +126,7 @@
                   :else s))
               (->TreeNode :red nil e nil)))]
     (let [^TreeNode t (ins n)]
-      (->RedBlackTree (->TreeNode :black (.left t) (.elem t) (.right t)) cmpfn))))
+      (->TreeNode :black (.left t) (.elem t) (.right t)))))
 
 (defn empty-tree
   ([]
@@ -137,3 +139,15 @@
    (reduce conj (empty-tree) xs))
   ([cmpfn xs]
    (reduce conj (empty-tree cmpfn) xs)))
+
+(defn remove-node [root k cmpfn]
+  (if (nil? root)
+    root
+    (if (zero? (cmpfn (.elem root) k))
+      (reduce #(insert %2 %1 cmpfn)  (.right root) (bst-sorted-seq (.left root)))
+      (->TreeNode
+       (.color root)
+       (remove-node (.left root) k cmpfn)
+       (.elem root)
+       (remove-node (.right root) k cmpfn))))
+  )

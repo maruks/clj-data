@@ -80,6 +80,14 @@
       (= :black (.color n))
       (= :red (.color n))))
 
+(defn- red-black-tree-properties-pred [n]
+  (and
+   (bst-pred n)
+   (red-child-pred n)
+   (red-children-pred n)
+   (black-nodes-pred n)
+   (red-black-color-pred n)))
+
 (def set-size 200)
 
 (defn- rnd-set [n]
