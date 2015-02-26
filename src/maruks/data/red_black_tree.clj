@@ -143,11 +143,15 @@
 (defn remove-node [root k cmpfn]
   (if (nil? root)
     root
-    (if (zero? (cmpfn (.elem root) k))
-      (reduce #(insert %2 %1 cmpfn)  (.right root) (bst-sorted-seq (.left root)))
-      (->TreeNode
-       (.color root)
-       (remove-node (.left root) k cmpfn)
-       (.elem root)
-       (remove-node (.right root) k cmpfn))))
+    (cond
+     (zero? (cmpfn (.elem root) k)) (reduce #(insert %2 %1 cmpfn) (.right root) (bst-sorted-seq (.left root)))
+     (pos? (cmpfn (.elem root) k)) (let [l (remove-node (.left root) k cmpfn)
+                                         r (.right root)]
+                                     (->TreeNode :black l (.elem root) r))
+     (neg? (cmpfn (.elem root) k)) (let [l (.left root)
+                                         r (remove-node (.right root) k cmpfn)
+                                         ]
+                                     (->TreeNode :black l (.elem root) r))
+      )
+    )
   )
