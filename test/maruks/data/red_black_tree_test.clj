@@ -80,14 +80,6 @@
       (= :black (.color n))
       (= :red (.color n))))
 
-(defn- red-black-tree-properties-pred [n]
-  (and
-   (bst-pred n)
-   (red-child-pred n)
-   (red-children-pred n)
-   (black-nodes-pred n)
-   (red-black-color-pred n)))
-
 (def set-size 200)
 
 (defn- rnd-set [n]
@@ -117,8 +109,28 @@
     (is (every? #(every-node? black-nodes-pred (.root %)) (rnd-sets 100)))))
 
 (deftest custom-cmp-tree
-  
   (let [t (red-black-tree #(compare (count %1) (count %2)) '("qw" "dfgh" "a" "abc"))]
-
     (testing "seq returns sorted sequence of elements"
       (is (= '("a" "qw" "abc" "dfgh") (seq t))))))
+
+(defn- is-red-black-tree? [n]
+  (and
+   (bst-pred n)
+   (red-child-pred n)
+   (red-children-pred n)
+   (black-nodes-pred n)
+   (red-black-color-pred n)))
+
+(defn is-leaf? [n]
+  (and n (nil? (.left n)) (nil? (.right n))))
+
+(deftest element-removal
+  (testing "removing RED LEAF node"
+    (let [t (red-black-tree '(2 1 4 3))
+          d (disj t 1)
+          n (find-node (.root t) 1 compare)]
+      (is (and (red? n) (is-leaf? n)))
+      (is (= '(2 3 4) (seq d)))
+      (is (= '(1 2 3 4) (seq t)))
+      (is (is-red-black-tree? (.root d)))
+      (is (is-red-black-tree? (.root t))))))

@@ -14,14 +14,19 @@
   (toString [t]
     (str "< C " (.color t) " L " (.left t) " E " (.elem t) " R " (.right t) " >")))
 
-(defn member [^TreeNode n k cmpfn]
+(defn find-node [^TreeNode n k cmpfn]
   (when n
     (let [e (.elem n)
           c (cmpfn e k)]
       (cond
-        (pos? c) (member (.left n) k cmpfn)
-        (neg? c) (member (.right n) k cmpfn)
-        :else e))))
+        (pos? c) (find-node (.left n) k cmpfn)
+        (neg? c) (find-node (.right n) k cmpfn)
+        :else n))))
+
+(defn find-elem [^TreeNode n k cmpfn]
+  (let [^TreeNode n (find-node n k cmpfn)]
+    (when n
+      (.elem n))))
 
 (defn red? [^TreeNode n]
   (and n (= :red (.color n))))
@@ -59,23 +64,13 @@
                   (.elem right)
                   (->TreeNode :black (.left right-right) (.elem right-right) (.right right-right)))
       
-      :else (->TreeNode color left elem right)))
-  
-  )
-
-(comment defn bst-sorted-seq [^TreeNode n]
-  (if n
-    (concat (bst-sorted-seq (.left n))
-            (cons (.elem n) (bst-sorted-seq (.right n))))
-    '()))
+      :else (->TreeNode color left elem right))))
 
 (defn bst-sorted-seq [^TreeNode n]
-  (println "OK" (if n (.elem n) "leaf"))
   (when n (lazy-cat
            (bst-sorted-seq (.left n))
-           [(.elem n)]
-           (bst-sorted-seq (.right n))
-           )))
+           (list (.elem n))
+           (bst-sorted-seq (.right n)))))
 
 (defn count-nodes [^TreeNode n]
   (if n (+ 1 (count-nodes (.left n)) (count-nodes (.right n))) 0))
@@ -87,11 +82,11 @@
 (deftype RedBlackTree [^TreeNode root cmpfn] 
   clojure.lang.IPersistentSet
   (disjoin [this k]
-    (->RedBlackTree (remove-node root k cmpfn) cmpfn))
+    (RedBlackTree. (remove-node root k cmpfn) cmpfn))
   (contains [this k]
-    (not (nil? (member root k cmpfn))))
+    (not (nil? (find-node root k cmpfn))))
   (get [this k]
-    (member root k cmpfn))
+    (find-elem root k cmpfn))
   (count [this]
     (count-nodes root))
   (empty [this]
@@ -101,14 +96,14 @@
   clojure.lang.IPersistentCollection
   (cons [this e]
     (let [t (insert e root cmpfn)]
-      (->RedBlackTree t cmpfn)))  
+      (RedBlackTree. t cmpfn)))  
   clojure.lang.Seqable
   (seq [this]
     (when root
       (bst-sorted-seq root)))
   clojure.lang.IFn
-  (invoke [_ k]
-    (member root k cmpfn))
+  (invoke [this k]
+    (find-elem root k cmpfn))
   Object
   (toString [this]
     (clojure.string/join " " (seq this)))
@@ -148,18 +143,14 @@
   ([cmpfn xs]
    (reduce conj (empty-tree cmpfn) xs)))
 
-(defn remove-node [root k cmpfn]
-  (if (nil? root)
-    root
-    (cond
-     (zero? (cmpfn (.elem root) k)) (reduce #(insert %2 %1 cmpfn) (.right root) (bst-sorted-seq (.left root)))
-     (pos? (cmpfn (.elem root) k)) (let [l (remove-node (.left root) k cmpfn)
-                                         r (.right root)]
-                                     (balance :black l (.elem root) r))
-     (neg? (cmpfn (.elem root) k)) (let [l (.left root)
-                                         r (remove-node (.right root) k cmpfn)
-                                         ]
-                                     (balance :black l (.elem root) r))
-      )
-    )
-  )
+(defn remove-node [^TreeNode n k cmpfn]
+  (when n
+    (let [e (.elem n)
+          l (.left n)
+          r (.right n)
+          c (.color n)
+          d (cmpfn (.elem n) k)]
+      (cond
+        (pos? d) (->TreeNode c (remove-node l k cmpfn) e r)
+        (neg? d) (->TreeNode c l e (remove-node r k cmpfn))
+        :else nil))))
