@@ -63,11 +63,19 @@
   
   )
 
-(defn bst-sorted-seq [^TreeNode n]
+(comment defn bst-sorted-seq [^TreeNode n]
   (if n
     (concat (bst-sorted-seq (.left n))
             (cons (.elem n) (bst-sorted-seq (.right n))))
     '()))
+
+(defn bst-sorted-seq [^TreeNode n]
+  (println "OK" (if n (.elem n) "leaf"))
+  (when n (lazy-cat
+           (bst-sorted-seq (.left n))
+           [(.elem n)]
+           (bst-sorted-seq (.right n))
+           )))
 
 (defn count-nodes [^TreeNode n]
   (if n (+ 1 (count-nodes (.left n)) (count-nodes (.right n))) 0))
@@ -147,11 +155,11 @@
      (zero? (cmpfn (.elem root) k)) (reduce #(insert %2 %1 cmpfn) (.right root) (bst-sorted-seq (.left root)))
      (pos? (cmpfn (.elem root) k)) (let [l (remove-node (.left root) k cmpfn)
                                          r (.right root)]
-                                     (->TreeNode :black l (.elem root) r))
+                                     (balance :black l (.elem root) r))
      (neg? (cmpfn (.elem root) k)) (let [l (.left root)
                                          r (remove-node (.right root) k cmpfn)
                                          ]
-                                     (->TreeNode :black l (.elem root) r))
+                                     (balance :black l (.elem root) r))
       )
     )
   )
