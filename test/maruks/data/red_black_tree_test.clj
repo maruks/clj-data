@@ -133,4 +133,15 @@
       (is (= '(2 3 4) (seq d)))
       (is (= '(1 2 3 4) (seq t)))
       (is (is-red-black-tree? (.root d)))
+      (is (is-red-black-tree? (.root t)))))
+  (testing "removing BLACK node with RED child"
+    (let [t (red-black-tree '(2 1 4 3))
+          d (disj t 2)
+          n (find-node (.root t) 2 compare)
+          c (.left n)]
+      (is (and (red? c) (is-leaf? c)))
+      (is (and (black? n) (not (is-leaf? n))))
+      (is (= '(1 3 4) (seq d)))
+      (is (= '(1 2 3 4) (seq t)))
+      (is (is-red-black-tree? (.root d)))
       (is (is-red-black-tree? (.root t))))))
