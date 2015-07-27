@@ -1,6 +1,6 @@
 (ns maruks.data.red-black-tree)
 
-(deftype TreeNode [color left elem right] 
+(deftype TreeNode [color left elem right]
   Object
   (hashCode [this]
     (+ (.hashCode elem)
@@ -50,7 +50,7 @@
       (->TreeNode :red
                   (->TreeNode :black (.left left) (.elem left) (.left left-right))
                   (.elem left-right)
-                  (->TreeNode :black (.right left-right) elem right))    
+                  (->TreeNode :black (.right left-right) elem right))
 
       (and right right-left (= :black color) (red? right) (red? right-left))
       (->TreeNode :red
@@ -63,7 +63,7 @@
                   (->TreeNode :black left elem (.left right))
                   (.elem right)
                   (->TreeNode :black (.left right-right) (.elem right-right) (.right right-right)))
-      
+
       :else (->TreeNode color left elem right))))
 
 (defn bst-sorted-seq [^TreeNode n]
@@ -79,7 +79,7 @@
 (declare insert)
 (declare remove-node)
 
-(deftype RedBlackTree [^TreeNode root cmpfn] 
+(deftype RedBlackTree [^TreeNode root cmpfn]
   clojure.lang.IPersistentSet
   (disjoin [this k]
     (RedBlackTree. (remove-node root k cmpfn) cmpfn))
@@ -96,7 +96,7 @@
   clojure.lang.IPersistentCollection
   (cons [this e]
     (let [t (insert e root cmpfn)]
-      (RedBlackTree. t cmpfn)))  
+      (RedBlackTree. t cmpfn)))
   clojure.lang.Seqable
   (seq [this]
     (when root
@@ -143,6 +143,20 @@
   ([cmpfn xs]
    (reduce conj (empty-tree cmpfn) xs)))
 
+(defn do-remove-node [^TreeNode n]
+  (cond
+    (and (red? n)
+         (nil? (.left n))
+         (nil? (.right n))) nil   ;; read leaf node
+
+         (and (black? n)
+              (or (and (red? (.right n)) (nil? (.left n)))
+                  (and (red? (.left n)) (nil? (.right n))))) (if-let [left (.left n)]
+                                                               (->TreeNode :black nil (.elem left) nil)
+                                                               (->TreeNode :black nil (.. n right elem) nil))
+
+    :else (assert false)))
+
 (defn remove-node [^TreeNode n k cmpfn]
   (when n
     (let [e (.elem n)
@@ -153,4 +167,4 @@
       (cond
         (pos? d) (->TreeNode c (remove-node l k cmpfn) e r)
         (neg? d) (->TreeNode c l e (remove-node r k cmpfn))
-        :else nil))))
+        :else (do-remove-node n)))))

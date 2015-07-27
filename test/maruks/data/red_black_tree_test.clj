@@ -4,13 +4,13 @@
             [criterium.core :refer [bench]]))
 
 (deftest red-black-tree-test
-  
+
   (let [e (empty-tree)
         a (reduce conj e '(1 2 3))
         b (reduce conj a '(3 2 4))]
-    
+
     (testing "set functions"
-      
+
       (is (empty? e))
       (is (not (empty? a)))
       (is (not (empty? b)))
@@ -21,13 +21,13 @@
 
       (is (not (contains? e 1)))
       (is (contains? a 2))
-      (is (not (contains? a 4)))    
-      (is (contains? b 4))    
+      (is (not (contains? a 4)))
+      (is (contains? b 4))
 
       (is (= 2 (get a 2)))
       (is (= 3 (get b 3)))
       (is (nil? (get a 4)))
-      
+
       (is (b 4))
       (is (not (b 5))))
 
@@ -45,20 +45,23 @@
     (and (pred (.left node))
          (pred (.right node)))))
 
+;; left < elem < right
 (defn- bst-pred [n]
   (or (nil? n)
       (and (or (nil? (.left n)) (> (.elem n) (.. n left elem)))
            (or (nil? (.right n)) (< (.elem n) (.. n right elem))))))
 
+;; both children nodes are black
 (defn- red-child-pred [n]
   (or (nil? n)
-      (= :black (.color n))     
+      (= :black (.color n))
       (and (or (nil? (.left n)) (= :black (.. n left color)))
            (or (nil? (.right n)) (= :black (.. n right color))))))
 
+;; or empty
 (defn- red-children-pred [n]
   (or (nil? n)
-      (= :black (.color n))     
+      (= :black (.color n))
       (or (and (nil? (.left n)) (nil? (.right n)))
           (and (not (nil? (.left n))) (not (nil? (.right n)))))))
 
@@ -70,6 +73,8 @@
         t))
     '(0)))
 
+;; Every path from a given node to any of its descendant NIL nodes
+;; contains the same number of black nodes.
 (defn- black-nodes-pred [n]
   (let [t (count-black-nodes n)
         b (first t)]
@@ -91,20 +96,20 @@
 (deftest red-black-tree-properties
 
   (testing "root is black"
-    (is (every? #(= :black (.. % root color)) (rnd-sets 100))))  
-  
+    (is (every? #(= :black (.. % root color)) (rnd-sets 100))))
+
   (testing "left child < parent < right child"
     (is (every? #(every-node? bst-pred (.root %)) (rnd-sets 100))))
-  
+
   (testing "no red node has red child node"
     (is (every? #(every-node? red-child-pred (.root %)) (rnd-sets 100))))
 
   (testing "node is either black or red"
       (is (every? #(every-node? red-black-color-pred (.root %)) (rnd-sets 100))))
-    
+
   (testing "red node has either zero or two children"
-    (is (every? #(every-node? red-children-pred (.root %)) (rnd-sets 100))))  
-  
+    (is (every? #(every-node? red-children-pred (.root %)) (rnd-sets 100))))
+
   (testing "every path from the root to empty node has the same number of black nodes"
     (is (every? #(every-node? black-nodes-pred (.root %)) (rnd-sets 100)))))
 
